@@ -93,41 +93,75 @@
             </div>
 
             <!-- Right Tension Stats & Quick Actions -->
-            <div class="flex items-center gap-2 sm:gap-3 pointer-events-auto">
-                <div class="flex flex-col items-end text-[10px] sm:text-xs font-mono text-slate-300 bg-slate-900/90 p-1.5 rounded-lg border border-red-900/50 shadow">
-                    <div class="flex items-center gap-1">
-                        <i class="fas fa-skull text-red-500 text-[10px]"></i>
-                        <span>DEATHS: <span id="hud-deaths" class="text-red-400 font-bold font-orbitron">0</span></span>
-                    </div>
-                    <div>DIST: <span id="hud-distance" class="text-cyan-300 font-bold font-orbitron">0m</span></div>
+        <div class="flex items-center gap-1.5 sm:gap-2.5 pointer-events-auto">
+            <div class="flex flex-col items-end text-[10px] sm:text-xs font-mono text-slate-300 bg-slate-900/90 p-1.5 rounded-lg border border-red-900/50 shadow">
+                <div class="flex items-center gap-1">
+                    <i class="fas fa-skull text-red-500 text-[10px]"></i>
+                    <span>DEATHS: <span id="hud-deaths" class="text-red-400 font-bold font-orbitron">0</span></span>
                 </div>
-                <button id="btn-quick-restart" title="Quick Restart (R)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-red-500/20 active:scale-95 transition flex items-center justify-center text-red-400 border border-red-500/40">
-                    <i class="fas fa-redo-alt text-xs sm:text-sm"></i>
-                </button>
-                <button id="btn-open-menu" title="Chambers Menu" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-red-500/20 active:scale-95 transition flex items-center justify-center text-red-400 border border-red-500/40">
-                    <i class="fas fa-th-large text-xs sm:text-sm"></i>
-                </button>
+                <div>DIST: <span id="hud-distance" class="text-cyan-300 font-bold font-orbitron">0m</span></div>
             </div>
+            <!-- Mute Audio Button -->
+            <button id="btn-mute" title="Toggle Mute (M)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-cyan-500/20 active:scale-95 transition flex items-center justify-center text-cyan-300 border border-cyan-500/40">
+                <i id="mute-icon" class="fas fa-volume-up text-xs sm:text-sm"></i>
+            </button>
+            <!-- Pause Button -->
+            <button id="btn-pause" title="Pause Game (P / Esc)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-amber-500/20 active:scale-95 transition flex items-center justify-center text-amber-300 border border-amber-500/40">
+                <i class="fas fa-pause text-xs sm:text-sm"></i>
+            </button>
+            <button id="btn-quick-restart" title="Quick Restart (R)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-red-500/20 active:scale-95 transition flex items-center justify-center text-red-400 border border-red-500/40">
+                <i class="fas fa-redo-alt text-xs sm:text-sm"></i>
+            </button>
+            <button id="btn-open-menu" title="Chambers Menu" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-red-500/20 active:scale-95 transition flex items-center justify-center text-red-400 border border-red-500/40">
+                <i class="fas fa-th-large text-xs sm:text-sm"></i>
+            </button>
         </div>
+    </div>
 
-        <!-- On-Screen Virtual Touch Controls -->
-        <div id="touch-controls" class="absolute bottom-3 left-0 w-full px-4 sm:px-6 flex justify-between items-end pointer-events-none z-10 hidden">
-            <div class="flex gap-2 sm:gap-3 pointer-events-auto">
-                <button id="btn-touch-left" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl glass-panel active:bg-cyan-500/40 flex items-center justify-center text-cyan-300 text-3xl border border-cyan-500/50 shadow-lg">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <button id="btn-touch-right" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl glass-panel active:bg-cyan-500/40 flex items-center justify-center text-cyan-300 text-3xl border border-cyan-500/50 shadow-lg">
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-            <div class="flex gap-2 sm:gap-3 pointer-events-auto">
-                <button id="btn-touch-jump" class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl glass-panel bg-red-500/30 active:bg-red-500/60 flex items-center justify-center text-red-300 text-3xl border border-red-400 shadow-lg shadow-red-500/30">
-                    <i class="fas fa-arrow-up"></i>
-                </button>
-            </div>
+    <!-- On-Screen Virtual Touch Controls (Thumb-friendly for Mobile/Tablets) -->
+    <div id="touch-controls" class="absolute bottom-4 left-0 w-full px-4 sm:px-8 flex justify-between items-end pointer-events-none z-10 hidden">
+        <!-- Left Thumb: Directional Controls -->
+        <div class="flex gap-2 sm:gap-4 pointer-events-auto">
+            <button id="btn-touch-left" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl glass-panel bg-slate-900/80 active:bg-cyan-500/40 flex items-center justify-center text-cyan-300 text-3xl border border-cyan-500/60 shadow-xl active:scale-90 transition">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button id="btn-touch-right" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl glass-panel bg-slate-900/80 active:bg-cyan-500/40 flex items-center justify-center text-cyan-300 text-3xl border border-cyan-500/60 shadow-xl active:scale-90 transition">
+                <i class="fas fa-arrow-right"></i>
+            </button>
         </div>
+        <!-- Right Thumb: Primary Action (Jump) -->
+        <div class="flex gap-2 sm:gap-4 pointer-events-auto">
+            <button id="btn-touch-jump" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl glass-panel bg-red-600/40 active:bg-red-500/70 flex items-center justify-center text-red-200 text-4xl border-2 border-red-400 shadow-2xl shadow-red-500/40 active:scale-90 transition">
+                <i class="fas fa-arrow-up"></i>
+            </button>
+        </div>
+    </div>
 
-        <!-- Title Screen Overlay -->
+    <!-- Pause Overlay Screen -->
+    <div id="screen-pause" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center p-6 glass-panel text-center bg-slate-950/90 backdrop-blur-md">
+        <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400 flex items-center justify-center mb-3 text-amber-300 text-3xl shadow-lg shadow-amber-500/20">
+            <i class="fas fa-pause"></i>
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black font-orbitron text-amber-400 mb-1 tracking-wider">GAME PAUSED</h2>
+        <p class="text-slate-300 text-xs sm:text-sm max-w-xs mb-6 italic">Entropy freeze active. Take a breath before returning to the run.</p>
+
+        <div class="flex flex-col gap-3 w-full max-w-xs mb-4">
+            <button id="btn-resume" class="py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 text-slate-950 font-black font-orbitron tracking-widest text-sm shadow-lg shadow-cyan-500/30 active:scale-95 transition flex items-center justify-center gap-2">
+                <i class="fas fa-play"></i> RESUME
+            </button>
+            <button id="btn-pause-restart" class="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-red-400 font-bold font-orbitron border border-red-500/40 tracking-wider text-sm active:scale-95 transition flex items-center justify-center gap-2">
+                <i class="fas fa-redo-alt"></i> RESTART CHAMBER
+            </button>
+            <button id="btn-pause-mute" class="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 font-bold font-orbitron border border-cyan-500/40 tracking-wider text-sm active:scale-95 transition flex items-center justify-center gap-2">
+                <i id="pause-mute-icon" class="fas fa-volume-up"></i> <span id="pause-mute-text">MUTE SOUNDS</span>
+            </button>
+            <button id="btn-pause-menu" class="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold font-orbitron border border-slate-700 tracking-wider text-sm active:scale-95 transition flex items-center justify-center gap-2">
+                <i class="fas fa-th-large"></i> CHAMBERS MENU
+            </button>
+        </div>
+    </div>
+
+    <!-- Title Screen Overlay -->
         <div id="screen-main" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 glass-panel text-center bg-slate-950/95">
             <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/50 flex items-center justify-center mb-3 text-red-500 text-3xl shadow-lg shadow-red-500/20">
                 <i class="fas fa-bolt animate-pulse"></i>
@@ -215,6 +249,7 @@
         class WebAudioSFX {
             constructor() {
                 this.ctx = null;
+                this.isMuted = false;
             }
 
             init() {
@@ -227,8 +262,13 @@
                 }
             }
 
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                return this.isMuted;
+            }
+
             playJump() {
-                if (!this.ctx) return;
+                if (!this.ctx || this.isMuted) return;
                 try {
                     const now = this.ctx.currentTime;
                     const osc = this.ctx.createOscillator();
@@ -248,7 +288,7 @@
             }
 
             playBridgeAppear() {
-                if (!this.ctx) return;
+                if (!this.ctx || this.isMuted) return;
                 try {
                     const now = this.ctx.currentTime;
                     const osc = this.ctx.createOscillator();
@@ -268,7 +308,7 @@
             }
 
             playDropThud() {
-                if (!this.ctx) return;
+                if (!this.ctx || this.isMuted) return;
                 try {
                     const now = this.ctx.currentTime;
                     const osc = this.ctx.createOscillator();
@@ -288,7 +328,7 @@
             }
 
             playHeartbeat() {
-                if (!this.ctx) return;
+                if (!this.ctx || this.isMuted) return;
                 try {
                     const now = this.ctx.currentTime;
                     const osc = this.ctx.createOscillator();
@@ -308,7 +348,7 @@
             }
 
             playDeath() {
-                if (!this.ctx) return;
+                if (!this.ctx || this.isMuted) return;
                 try {
                     const now = this.ctx.currentTime;
                     const osc = this.ctx.createOscillator();
@@ -328,7 +368,7 @@
             }
 
             playWin() {
-                if (!this.ctx) return;
+                if (!this.ctx || this.isMuted) return;
                 try {
                     const now = this.ctx.currentTime;
                     const freqs = [330, 440, 554, 659];
@@ -349,7 +389,7 @@
             }
 
             playCheckpoint() {
-                if (!this.ctx) return;
+                if (!this.ctx || this.isMuted) return;
                 try {
                     const now = this.ctx.currentTime;
                     const osc = this.ctx.createOscillator();
@@ -369,7 +409,7 @@
             }
 
             playTrapTroll() {
-                if (!this.ctx) return;
+                if (!this.ctx || this.isMuted) return;
                 try {
                     const now = this.ctx.currentTime;
                     const osc = this.ctx.createOscillator();
@@ -398,6 +438,7 @@
         const V_HEIGHT = 540;
         const BASE_Y = 420; // Standard floor Y baseline
         let scaleRatio = 1;
+        let isPaused = false;
 
         function resizeCanvas() {
             const container = document.getElementById('game-container');
@@ -407,6 +448,7 @@
             scaleRatio = rect.width / V_WIDTH;
         }
         window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 150));
 
         const TOTAL_LEVELS = 200;
         const CHAPTER_NAMES = [
@@ -520,8 +562,6 @@
         let activeLevel = null;
         let heartBeatInterval = null;
 
-        const keys = { left: false, right: false, jump: false, jumpHeld: false };
-
         const player = {
             x: 100,
             y: 360,
@@ -529,18 +569,18 @@
             h: 32,
             vx: 0,
             vy: 0,
-            accel: 1.8,
+            maxSpeed: 5.5,
+            accel: 0.8,
             friction: 0.82,
-            airFriction: 0.90,
-            maxSpeed: 7.0,
-            jumpForce: 12.6,
+            airFriction: 0.92,
+            gravity: 0.65,
+            maxFallSpeed: 12,
+            jumpForce: 12.5,
             jumpCutMultiplier: 0.45,
-            gravity: 0.68,
-            maxFallSpeed: 12.5,
             isGrounded: false,
             wasGrounded: false,
             coyoteTimer: 0,
-            coyoteMax: 0.12,
+            coyoteMax: 0.1,
             jumpBufferTimer: 0,
             jumpBufferMax: 0.12,
             scaleX: 1,
@@ -548,11 +588,43 @@
             trail: []
         };
 
+        const keys = { left: false, right: false, jump: false, jumpHeld: false };
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseModal = document.getElementById('screen-pause');
+            if (isPaused) {
+                if (pauseModal) pauseModal.classList.remove('hidden');
+            } else {
+                if (pauseModal) pauseModal.classList.add('hidden');
+            }
+        }
+
+        function updateMuteUI(muted) {
+            const icon = document.getElementById('mute-icon');
+            const pauseIcon = document.getElementById('pause-mute-icon');
+            const pauseText = document.getElementById('pause-mute-text');
+            if (muted) {
+                if (icon) icon.className = 'fas fa-volume-mute text-xs sm:text-sm text-red-400';
+                if (pauseIcon) pauseIcon.className = 'fas fa-volume-mute';
+                if (pauseText) pauseText.textContent = 'UNMUTE SOUNDS';
+            } else {
+                if (icon) icon.className = 'fas fa-volume-up text-xs sm:text-sm text-cyan-300';
+                if (pauseIcon) pauseIcon.className = 'fas fa-volume-up';
+                if (pauseText) pauseText.textContent = 'MUTE SOUNDS';
+            }
+        }
+
+        function toggleMute() {
+            const muted = audio.toggleMute();
+            updateMuteUI(muted);
+        }
+
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
             timerSeconds = 0;
             timerInterval = setInterval(() => {
-                timerSeconds++;
+                if (!isPaused) timerSeconds++;
             }, 1000);
         }
 
@@ -578,6 +650,9 @@
             } else {
                 checkpointX = parseFloat(localStorage.getItem('chronoshift_checkpoint_x') || '100');
             }
+
+            isPaused = false;
+            document.getElementById('screen-pause').classList.add('hidden');
 
             player.x = checkpointX;
             player.y = 360;
@@ -649,6 +724,8 @@
                 keys.jumpHeld = true;
             }
             if (e.key === 'r' || e.key === 'R') quickRestartLevel();
+            if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') togglePause();
+            if (e.key === 'm' || e.key === 'M') toggleMute();
         });
 
         window.addEventListener('keyup', (e) => {
@@ -664,17 +741,31 @@
         function bindTouchBtn(id, keyName, onPress, onRelease) {
             const btn = document.getElementById(id);
             if (!btn) return;
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
+
+            const handlePress = (e) => {
+                if (e) e.preventDefault();
                 audio.init();
+                if (keyName && keys.hasOwnProperty(keyName)) {
+                    keys[keyName] = true;
+                }
                 if (onPress) onPress();
-                keys[keyName] = true;
-            }, { passive: false });
-            btn.addEventListener('touchend', (e) => {
-                e.preventDefault();
+            };
+
+            const handleRelease = (e) => {
+                if (e) e.preventDefault();
+                if (keyName && keys.hasOwnProperty(keyName)) {
+                    keys[keyName] = false;
+                }
                 if (onRelease) onRelease();
-                keys[keyName] = false;
-            }, { passive: false });
+            };
+
+            btn.addEventListener('touchstart', handlePress, { passive: false });
+            btn.addEventListener('touchend', handleRelease, { passive: false });
+            btn.addEventListener('touchcancel', handleRelease, { passive: false });
+
+            btn.addEventListener('mousedown', handlePress);
+            btn.addEventListener('mouseup', handleRelease);
+            btn.addEventListener('mouseleave', handleRelease);
         }
 
         bindTouchBtn('btn-touch-left', 'left');
@@ -685,6 +776,39 @@
         }, () => {
             keys.jumpHeld = false;
             if (player.vy < 0) player.vy *= player.jumpCutMultiplier;
+        });
+
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            audio.init();
+            togglePause();
+        });
+
+        document.getElementById('btn-mute').addEventListener('click', () => {
+            audio.init();
+            toggleMute();
+        });
+
+        document.getElementById('btn-resume').addEventListener('click', () => {
+            audio.init();
+            togglePause();
+        });
+
+        document.getElementById('btn-pause-restart').addEventListener('click', () => {
+            audio.init();
+            quickRestartLevel();
+        });
+
+        document.getElementById('btn-pause-mute').addEventListener('click', () => {
+            audio.init();
+            toggleMute();
+        });
+
+        document.getElementById('btn-pause-menu').addEventListener('click', () => {
+            audio.init();
+            isPaused = false;
+            document.getElementById('screen-pause').classList.add('hidden');
+            renderLevelSelector();
+            document.getElementById('screen-levels').classList.remove('hidden');
         });
 
         document.getElementById('btn-quick-restart').addEventListener('click', () => {
@@ -762,7 +886,7 @@
         }
 
         function updatePhysics(dt) {
-            if (!activeLevel) return;
+            if (!activeLevel || isPaused) return;
 
             voidX += voidSpeed;
             if (player.x < voidX + 30) {
@@ -1287,6 +1411,7 @@
         function startHeartbeat() {
             if (heartBeatInterval) clearInterval(heartBeatInterval);
             heartBeatInterval = setInterval(() => {
+                if (isPaused) return;
                 const voidDistance = player.x - voidX;
                 if (voidDistance < 350) audio.playHeartbeat();
             }, 600);
