@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Chrono Shift: Entropy Bridge</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -54,6 +54,21 @@
             background: rgba(255, 0, 85, 0.4);
             border-radius: 4px;
         }
+        /* Mobile Touch Button Active States */
+        .touch-btn {
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .touch-btn:active, .touch-btn.active {
+            background-color: rgba(0, 243, 255, 0.35) !important;
+            border-color: #00f3ff !important;
+            transform: scale(0.92);
+        }
+        .jump-btn:active, .jump-btn.active {
+            background-color: rgba(255, 0, 85, 0.5) !important;
+            border-color: #ff0055 !important;
+            transform: scale(0.92);
+        }
     </style>
 </head>
 <body class="fixed inset-0 w-full h-[100dvh] flex items-center justify-center bg-black overflow-hidden select-none m-0 p-0">
@@ -68,7 +83,7 @@
         </p>
     </div>
 
-    <div id="game-container" class="relative w-full max-w-[100vw] h-full max-h-[100dvh] aspect-[16/9] overflow-hidden rounded-none sm:rounded-2xl border-0 sm:border border-red-500/30 shadow-2xl flex items-center justify-center bg-slate-950 m-auto">
+    <div id="game-container" class="relative w-full h-full aspect-[16/9] max-w-[100vw] max-h-[100dvh] overflow-hidden rounded-none sm:rounded-2xl border-0 sm:border border-red-500/30 shadow-2xl flex items-center justify-center bg-slate-950 m-auto">
         
         <!-- Game Render Canvas -->
         <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
@@ -77,61 +92,64 @@
         <div id="danger-vignette" class="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-0 bg-radial from-transparent via-transparent to-red-950/80"></div>
 
         <!-- Top HUD Banner -->
-        <div id="hud" class="absolute top-0 left-0 w-full p-3 sm:p-4 flex justify-between items-start pointer-events-none z-10 opacity-0 transition-opacity duration-300">
+        <div id="hud" class="absolute top-0 left-0 w-full p-2 sm:p-4 flex justify-between items-start pointer-events-none z-10 opacity-0 transition-opacity duration-300">
             <!-- Left Chamber & Void Distance Indicator -->
-            <div class="flex flex-col gap-1">
+            <div class="flex flex-col gap-0.5 sm:gap-1">
                 <div class="flex items-center gap-2 sm:gap-3">
-                    <span id="hud-level-title" class="font-orbitron text-pink-500 text-sm sm:text-lg font-black tracking-wider neon-text-red">ENTROPY CORE</span>
-                    <span id="hud-void-warning" class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-red-950/90 border border-red-500/70 text-red-300 animate-pulse">
+                    <span id="hud-level-title" class="font-orbitron text-pink-500 text-xs sm:text-lg font-black tracking-wider neon-text-red">ENTROPY CORE</span>
+                    <span id="hud-mode-badge" class="px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-black font-orbitron bg-amber-950/90 border border-amber-500/70 text-amber-300">
+                        STD MODE
+                    </span>
+                    <span id="hud-void-warning" class="px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-bold bg-red-950/90 border border-red-500/70 text-red-300 animate-pulse">
                         <i class="fas fa-exclamation-triangle mr-1"></i> VOID CLOSING
                     </span>
-                    <span id="hud-checkpoint-badge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-cyan-950/90 border border-cyan-400 text-cyan-300 animate-bounce">
+                    <span id="hud-checkpoint-badge" class="hidden px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-bold bg-cyan-950/90 border border-cyan-400 text-cyan-300 animate-bounce">
                         <i class="fas fa-flag mr-1"></i> CHECKPOINT
                     </span>
                 </div>
-                <div id="hud-hint" class="text-[11px] sm:text-xs text-amber-300 font-semibold italic max-w-xs sm:max-w-md drop-shadow">"Bridges materialize as you step forward. Jump over dropped crates!"</div>
+                <div id="hud-hint" class="text-[10px] sm:text-xs text-amber-300 font-semibold italic max-w-xs sm:max-w-md drop-shadow">"Watch out for crumbling bridges (orange glow) and void gaps! Jump precisely."</div>
             </div>
 
             <!-- Right Tension Stats & Quick Actions -->
             <div class="flex items-center gap-1.5 sm:gap-2.5 pointer-events-auto">
-                <div class="flex flex-col items-end text-[10px] sm:text-xs font-mono text-slate-300 bg-slate-900/90 p-1.5 rounded-lg border border-red-900/50 shadow">
+                <div class="flex flex-col items-end text-[9px] sm:text-xs font-mono text-slate-300 bg-slate-900/90 p-1 sm:p-1.5 rounded-lg border border-red-900/50 shadow">
                     <div class="flex items-center gap-1">
-                        <i class="fas fa-skull text-red-500 text-[10px]"></i>
+                        <i class="fas fa-skull text-red-500 text-[9px]"></i>
                         <span>DEATHS: <span id="hud-deaths" class="text-red-400 font-bold font-orbitron">0</span></span>
                     </div>
                     <div>DIST: <span id="hud-distance" class="text-cyan-300 font-bold font-orbitron">0m</span></div>
                 </div>
                 <!-- Mute Audio Button -->
-                <button id="btn-mute" title="Toggle Mute (M)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-cyan-500/20 active:scale-95 transition flex items-center justify-center text-cyan-300 border border-cyan-500/40">
+                <button id="btn-mute" title="Toggle Mute (M)" class="w-7 h-7 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-cyan-500/20 active:scale-95 transition flex items-center justify-center text-cyan-300 border border-cyan-500/40">
                     <i id="mute-icon" class="fas fa-volume-up text-xs sm:text-sm"></i>
                 </button>
                 <!-- Pause Button -->
-                <button id="btn-pause" title="Pause Game (P / Esc)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-amber-500/20 active:scale-95 transition flex items-center justify-center text-amber-300 border border-amber-500/40">
+                <button id="btn-pause" title="Pause Game (P / Esc)" class="w-7 h-7 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-amber-500/20 active:scale-95 transition flex items-center justify-center text-amber-300 border border-amber-500/40">
                     <i class="fas fa-pause text-xs sm:text-sm"></i>
                 </button>
-                <button id="btn-quick-restart" title="Quick Restart (R)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-red-500/20 active:scale-95 transition flex items-center justify-center text-red-400 border border-red-500/40">
+                <button id="btn-quick-restart" title="Quick Restart (R)" class="w-7 h-7 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-red-500/20 active:scale-95 transition flex items-center justify-center text-red-400 border border-red-500/40">
                     <i class="fas fa-redo-alt text-xs sm:text-sm"></i>
                 </button>
-                <button id="btn-open-menu" title="Chambers Menu" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-red-500/20 active:scale-95 transition flex items-center justify-center text-red-400 border border-red-500/40">
+                <button id="btn-open-menu" title="Chambers Menu" class="w-7 h-7 sm:w-9 sm:h-9 rounded-xl glass-panel hover:bg-red-500/20 active:scale-95 transition flex items-center justify-center text-red-400 border border-red-500/40">
                     <i class="fas fa-th-large text-xs sm:text-sm"></i>
                 </button>
             </div>
         </div>
 
-        <!-- On-Screen Virtual Touch Controls (Thumb-friendly for Mobile/Tablets) -->
-        <div id="touch-controls" class="absolute bottom-4 left-0 w-full px-4 sm:px-8 flex justify-between items-end pointer-events-none z-10 hidden">
+        <!-- On-Screen Virtual Touch Controls -->
+        <div id="touch-controls" class="absolute bottom-2 left-0 w-full px-3 sm:px-8 flex justify-between items-end pointer-events-none z-20">
             <!-- Left Thumb: Directional Controls -->
-            <div class="flex gap-2 sm:gap-4 pointer-events-auto">
-                <button id="btn-touch-left" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl glass-panel bg-slate-900/80 active:bg-cyan-500/40 flex items-center justify-center text-cyan-300 text-3xl border border-cyan-500/60 shadow-xl active:scale-90 transition">
+            <div class="flex gap-2 pointer-events-auto">
+                <button id="btn-touch-left" class="touch-btn w-12 h-12 sm:w-16 sm:h-16 rounded-xl glass-panel bg-slate-900/80 flex items-center justify-center text-cyan-300 text-xl sm:text-2xl border border-cyan-500/60 shadow-xl transition">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <button id="btn-touch-right" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl glass-panel bg-slate-900/80 active:bg-cyan-500/40 flex items-center justify-center text-cyan-300 text-3xl border border-cyan-500/60 shadow-xl active:scale-90 transition">
+                <button id="btn-touch-right" class="touch-btn w-12 h-12 sm:w-16 sm:h-16 rounded-xl glass-panel bg-slate-900/80 flex items-center justify-center text-cyan-300 text-xl sm:text-2xl border border-cyan-500/60 shadow-xl transition">
                     <i class="fas fa-arrow-right"></i>
                 </button>
             </div>
             <!-- Right Thumb: Primary Action (Jump) -->
-            <div class="flex gap-2 sm:gap-4 pointer-events-auto">
-                <button id="btn-touch-jump" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl glass-panel bg-red-600/40 active:bg-red-500/70 flex items-center justify-center text-red-200 text-4xl border-2 border-red-400 shadow-2xl shadow-red-500/40 active:scale-90 transition">
+            <div class="flex pointer-events-auto">
+                <button id="btn-touch-jump" class="touch-btn jump-btn w-14 h-14 sm:w-20 sm:h-20 rounded-xl glass-panel bg-red-600/40 flex items-center justify-center text-red-200 text-2xl sm:text-3xl border-2 border-red-400 shadow-xl transition">
                     <i class="fas fa-arrow-up"></i>
                 </button>
             </div>
@@ -139,42 +157,49 @@
 
         <!-- Pause Overlay Screen -->
         <div id="screen-pause" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center p-6 glass-panel text-center bg-slate-950/90 backdrop-blur-md">
-            <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400 flex items-center justify-center mb-3 text-amber-300 text-3xl shadow-lg shadow-amber-500/20">
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400 flex items-center justify-center mb-3 text-amber-300 text-2xl shadow-lg shadow-amber-500/20">
                 <i class="fas fa-pause"></i>
             </div>
-            <h2 class="text-3xl sm:text-4xl font-black font-orbitron text-amber-400 mb-1 tracking-wider">GAME PAUSED</h2>
-            <p class="text-slate-300 text-xs sm:text-sm max-w-xs mb-6 italic">Entropy freeze active. Take a breath before returning to the run.</p>
+            <h2 class="text-2xl sm:text-4xl font-black font-orbitron text-amber-400 mb-1 tracking-wider">GAME PAUSED</h2>
+            <p class="text-slate-300 text-xs sm:text-sm max-w-xs mb-5 italic">Entropy freeze active. Take a breath before returning to the run.</p>
 
-            <div class="flex flex-col gap-3 w-full max-w-xs mb-4">
-                <button id="btn-resume" class="py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 text-slate-950 font-black font-orbitron tracking-widest text-sm shadow-lg shadow-cyan-500/30 active:scale-95 transition flex items-center justify-center gap-2">
+            <div class="flex flex-col gap-2.5 w-full max-w-xs mb-2">
+                <button id="btn-resume" class="py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 text-slate-950 font-black font-orbitron tracking-widest text-xs sm:text-sm shadow-lg shadow-cyan-500/30 active:scale-95 transition flex items-center justify-center gap-2">
                     <i class="fas fa-play"></i> RESUME
                 </button>
-                <button id="btn-pause-restart" class="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-red-400 font-bold font-orbitron border border-red-500/40 tracking-wider text-sm active:scale-95 transition flex items-center justify-center gap-2">
+                <button id="btn-pause-restart" class="py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-red-400 font-bold font-orbitron border border-red-500/40 tracking-wider text-xs sm:text-sm active:scale-95 transition flex items-center justify-center gap-2">
                     <i class="fas fa-redo-alt"></i> RESTART CHAMBER
                 </button>
-                <button id="btn-pause-mute" class="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 font-bold font-orbitron border border-cyan-500/40 tracking-wider text-sm active:scale-95 transition flex items-center justify-center gap-2">
+                <button id="btn-pause-mute" class="py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 font-bold font-orbitron border border-cyan-500/40 tracking-wider text-xs sm:text-sm active:scale-95 transition flex items-center justify-center gap-2">
                     <i id="pause-mute-icon" class="fas fa-volume-up"></i> <span id="pause-mute-text">MUTE SOUNDS</span>
                 </button>
-                <button id="btn-pause-menu" class="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold font-orbitron border border-slate-700 tracking-wider text-sm active:scale-95 transition flex items-center justify-center gap-2">
+                <button id="btn-pause-menu" class="py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold font-orbitron border border-slate-700 tracking-wider text-xs sm:text-sm active:scale-95 transition flex items-center justify-center gap-2">
                     <i class="fas fa-th-large"></i> CHAMBERS MENU
                 </button>
             </div>
         </div>
 
         <!-- Title Screen Overlay -->
-        <div id="screen-main" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 glass-panel text-center bg-slate-950/95">
-            <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/50 flex items-center justify-center mb-3 text-red-500 text-3xl shadow-lg shadow-red-500/20">
+        <div id="screen-main" class="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 glass-panel text-center bg-slate-950/95">
+            <div class="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/50 flex items-center justify-center mb-3 text-red-500 text-2xl shadow-lg shadow-red-500/20">
                 <i class="fas fa-bolt animate-pulse"></i>
             </div>
             <h1 class="text-3xl sm:text-5xl font-black font-orbitron tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-400 to-amber-400 mb-1">
                 ENTROPY BRIDGE
             </h1>
-            <p class="text-red-400 text-xs sm:text-sm font-orbitron tracking-widest uppercase mb-4">REALISTIC SUSPENSE PLATFORMER</p>
-            <p class="text-slate-300 max-w-md text-xs sm:text-sm mb-6 leading-relaxed">
-                The bridge materializes ahead as you move! Dropping crates form jumpable hurdles, spikes are strictly placed, and the void chases from behind. Keep pushing forward!
+            <p class="text-red-400 text-xs sm:text-sm font-orbitron tracking-widest uppercase mb-2">HIGH-INTENSITY HARDCORE PLATFORMER</p>
+            <p class="text-slate-300 max-w-md text-xs sm:text-sm mb-4 leading-relaxed">
+                Platforms gap dynamically across variable heights. Stepping on crumbling bridges triggers immediate collapse. Outrun the relentless Entropy Void!
             </p>
 
-            <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs sm:max-w-md mb-6">
+            <!-- Difficulty Selector Switch -->
+            <div class="flex items-center gap-3 bg-slate-900/90 border border-slate-700 p-1.5 rounded-xl mb-5">
+                <span class="text-xs font-bold font-orbitron text-slate-400 pl-2">DIFFICULTY:</span>
+                <button id="mode-std" class="px-3 py-1 rounded-lg text-xs font-black font-orbitron bg-amber-500 text-slate-950 shadow transition">STANDARD</button>
+                <button id="mode-hyper" class="px-3 py-1 rounded-lg text-xs font-black font-orbitron bg-slate-800 text-red-400 hover:bg-slate-700 transition">HYPER VOID 🔥</button>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs sm:max-w-md mb-5">
                 <button id="btn-play" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 via-pink-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-slate-950 font-black font-orbitron tracking-widest text-sm sm:text-base shadow-lg shadow-red-500/40 active:scale-95 transition flex items-center justify-center gap-2">
                     <i class="fas fa-play"></i> START RUN
                 </button>
@@ -183,7 +208,7 @@
                 </button>
             </div>
 
-            <div class="text-[11px] text-slate-400 flex flex-wrap justify-center gap-4 border-t border-slate-800/80 pt-4 max-w-md">
+            <div class="text-[11px] text-slate-400 flex flex-wrap justify-center gap-4 border-t border-slate-800/80 pt-3 max-w-md">
                 <span><i class="fas fa-arrow-left text-red-400 mr-1"></i> Left / A: Backward</span>
                 <span><i class="fas fa-arrow-right text-cyan-400 mr-1"></i> Right / D: Forward</span>
                 <span><i class="fas fa-arrow-up text-amber-400 mr-1"></i> W / Space: Jump</span>
@@ -193,7 +218,7 @@
         <!-- Level Selector Overlay Screen -->
         <div id="screen-levels" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center p-4 sm:p-6 glass-panel text-center bg-slate-950/95 backdrop-blur-md">
             <h2 class="text-2xl sm:text-3xl font-black font-orbitron text-red-400 mb-0.5 tracking-wider">ENTROPY CHAMBERS</h2>
-            <p class="text-[11px] sm:text-xs text-slate-400 mb-3">200 Chambers across 10 Cyber Worlds. All hazards are 100% solvable!</p>
+            <p class="text-[11px] sm:text-xs text-slate-400 mb-3">200 Chambers across 10 Cyber Worlds. Master platform timing to survive!</p>
 
             <!-- World / Chapter Tab Navigation -->
             <div id="world-tabs" class="flex flex-wrap justify-center gap-1.5 max-w-xl w-full mb-3 px-1">
@@ -221,7 +246,7 @@
                 <i class="fas fa-shield-alt"></i>
             </div>
             <h2 id="win-title" class="text-2xl sm:text-4xl font-black font-orbitron text-cyan-400 mb-1 neon-text-cyan">CHAMBER ESCAPED!</h2>
-            <p id="win-message" class="text-slate-300 text-xs sm:text-sm max-w-sm mb-5 italic">"Flawless execution! You bypassed every hazard and outran the entropy rift."</p>
+            <p id="win-message" class="text-slate-300 text-xs sm:text-sm max-w-sm mb-5 italic">"Precision jumps and split-second reflexes! You survived the collapsing bridge."</p>
 
             <div class="w-full max-w-xs p-3 rounded-xl bg-slate-900/80 border border-slate-800 mb-5 flex justify-around text-xs font-mono">
                 <div>
@@ -274,16 +299,16 @@
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(190, now);
-                    osc.frequency.exponentialRampToValueAtTime(620, now + 0.09);
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(680, now + 0.08);
 
-                    gain.gain.setValueAtTime(0.18, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
 
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.09);
+                    osc.stop(now + 0.08);
                 } catch(e){}
             }
 
@@ -294,8 +319,8 @@
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(350, now);
-                    osc.frequency.exponentialRampToValueAtTime(750, now + 0.04);
+                    osc.frequency.setValueAtTime(380, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.04);
 
                     gain.gain.setValueAtTime(0.02, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
@@ -307,6 +332,26 @@
                 } catch(e){}
             }
 
+            playCrumble() {
+                if (!this.ctx || this.isMuted) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } catch(e){}
+            }
+
             playDropThud() {
                 if (!this.ctx || this.isMuted) return;
                 try {
@@ -314,16 +359,16 @@
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(140, now);
-                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.14);
 
                     gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
 
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.15);
+                    osc.stop(now + 0.14);
                 } catch(e){}
             }
 
@@ -334,16 +379,16 @@
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(55, now);
-                    osc.frequency.exponentialRampToValueAtTime(25, now + 0.11);
+                    osc.frequency.setValueAtTime(60, now);
+                    osc.frequency.exponentialRampToValueAtTime(25, now + 0.1);
 
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.11);
+                    gain.gain.setValueAtTime(0.22, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
 
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.11);
+                    osc.stop(now + 0.1);
                 } catch(e){}
             }
 
@@ -354,10 +399,10 @@
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(320, now);
-                    osc.frequency.exponentialRampToValueAtTime(25, now + 0.35);
+                    osc.frequency.setValueAtTime(360, now);
+                    osc.frequency.exponentialRampToValueAtTime(20, now + 0.35);
 
-                    gain.gain.setValueAtTime(0.28, now);
+                    gain.gain.setValueAtTime(0.3, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
 
                     osc.connect(gain);
@@ -415,16 +460,16 @@
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(600, now);
-                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.25);
+                    osc.frequency.setValueAtTime(650, now);
+                    osc.frequency.exponentialRampToValueAtTime(140, now + 0.22);
 
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    gain.gain.setValueAtTime(0.22, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
 
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.25);
+                    osc.stop(now + 0.22);
                 } catch(e){}
             }
         }
@@ -436,9 +481,10 @@
 
         const V_WIDTH = 960;
         const V_HEIGHT = 540;
-        const BASE_Y = 420; // Standard floor Y baseline
+        const BASE_Y = 320;
         let scaleRatio = 1;
         let isPaused = false;
+        let difficultyMode = localStorage.getItem('cs_diff') || 'STD'; // STD vs HYPER
 
         function resizeCanvas() {
             const container = document.getElementById('game-container');
@@ -448,7 +494,6 @@
             canvas.height = rect.height;
             scaleRatio = rect.width / V_WIDTH;
 
-            // Check portrait orientation on mobile devices to toggle rotate overlay
             const rotatePrompt = document.getElementById('rotate-device-prompt');
             if (rotatePrompt) {
                 const isMobile = window.innerWidth <= 960 || 'ontouchstart' in window;
@@ -464,7 +509,6 @@
         window.addEventListener('orientationchange', resizeCanvas);
         resizeCanvas();
 
-        // 10 Chapter / World Titles
         const CHAPTER_NAMES = [
             "CHAPTER I: Micro Shock",
             "CHAPTER II: Entropy Core",
@@ -478,7 +522,6 @@
             "CHAPTER X: Absolute Zero"
         ];
 
-        // Seeded Pseudo-Random Generator (PRNG) for deterministic 200 Chambers
         function mulberry32(a) {
             return function() {
                 let t = a += 0x6D2B79F5;
@@ -488,18 +531,17 @@
             }
         }
 
-        // Persistent Progress Data
         let currentLevelIndex = parseInt(localStorage.getItem('cs_level') || '1');
         let maxUnlockedLevel = parseInt(localStorage.getItem('cs_unlocked') || '1');
         let totalDeaths = parseInt(localStorage.getItem('cs_deaths') || '0');
-        let activeCheckpoint = null; // { x, y, voidDist }
+        let activeCheckpoint = null;
 
-        // Core Physics Parameters
-        const GRAVITY = 0.55;
-        const JUMP_FORCE = -11.5;
-        const SHORT_JUMP_GRAVITY = 1.6;
-        const MOVE_SPEED = 5.2;
-        const ACCEL = 0.8;
+        // Tighter & Sharper Physics Parameters
+        const GRAVITY = 0.62;
+        const JUMP_FORCE = -12.2;
+        const SHORT_JUMP_GRAVITY = 1.8;
+        const MOVE_SPEED = 5.5;
+        const ACCEL = 0.95;
         const FRICTION = 0.82;
 
         const player = {
@@ -507,135 +549,199 @@
             y: BASE_Y - 42,
             vx: 0,
             vy: 0,
-            w: 26,
-            h: 42,
+            w: 24,
+            h: 40,
             grounded: false,
             coyoteTimer: 0,
             jumpBufferTimer: 0,
             holdsJump: false,
             facingRight: true,
-            deathTimer: 0
+            standingBridge: null
         };
 
         let keys = { left: false, right: false, jump: false };
-        let gameState = 'MENU'; // 'MENU', 'PLAYING', 'PAUSED', 'WIN', 'DEAD'
+        let gameState = 'MENU';
         let levelTime = 0;
         let timerInterval = null;
 
-        // Active Level Entities
         let levelLength = 2000;
         let voidX = -300;
-        let voidSpeed = 2.0;
+        let baseVoidSpeed = 2.4;
+        let currentVoidSpeed = 2.4;
         let bridges = [];
         let hazards = [];
         let checkpoints = [];
         let goalPortal = { x: 0, y: BASE_Y - 70, w: 40, h: 70, isFake: false, originalX: 0, teleported: false };
         let particles = [];
-
-        // Camera Offset
         let cameraX = 0;
 
+        function updateDifficultyUI() {
+            const stdBtn = document.getElementById('mode-std');
+            const hyperBtn = document.getElementById('mode-hyper');
+            const badge = document.getElementById('hud-mode-badge');
+            
+            if (difficultyMode === 'HYPER') {
+                stdBtn.className = "px-3 py-1 rounded-lg text-xs font-black font-orbitron bg-slate-800 text-slate-400 hover:bg-slate-700 transition";
+                hyperBtn.className = "px-3 py-1 rounded-lg text-xs font-black font-orbitron bg-red-600 text-white shadow transition";
+                badge.className = "px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-black font-orbitron bg-red-950/90 border border-red-500/70 text-red-300 animate-pulse";
+                badge.innerText = "HYPER VOID 🔥";
+            } else {
+                stdBtn.className = "px-3 py-1 rounded-lg text-xs font-black font-orbitron bg-amber-500 text-slate-950 shadow transition";
+                hyperBtn.className = "px-3 py-1 rounded-lg text-xs font-black font-orbitron bg-slate-800 text-red-400 hover:bg-slate-700 transition";
+                badge.className = "px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-black font-orbitron bg-amber-950/90 border border-amber-500/70 text-amber-300";
+                badge.innerText = "STD MODE";
+            }
+        }
+
+        document.getElementById('mode-std').onclick = () => {
+            difficultyMode = 'STD';
+            localStorage.setItem('cs_diff', 'STD');
+            updateDifficultyUI();
+        };
+        document.getElementById('mode-hyper').onclick = () => {
+            difficultyMode = 'HYPER';
+            localStorage.setItem('cs_diff', 'HYPER');
+            updateDifficultyUI();
+        };
+
         /**
-         * Procedurally Generate Level Chambers (1 to 200)
+         * Procedurally Generate Level Chambers with Variable Heights, Gaps & Crumbling Bridges
          */
         function generateLevel(levelIdx) {
-            const rng = mulberry32(levelIdx * 777 + 12345);
-            
-            // Level distance scales up per chapter
+            const rng = mulberry32(levelIdx * 888 + 54321);
             const worldNum = Math.floor((levelIdx - 1) / 20) + 1;
-            levelLength = 1600 + (worldNum * 600) + Math.floor(rng() * 800);
-            voidSpeed = 1.6 + (worldNum * 0.22) + (levelIdx % 20) * 0.03;
+            levelLength = 1800 + (worldNum * 650) + Math.floor(rng() * 800);
+            
+            const diffMult = (difficultyMode === 'HYPER') ? 1.35 : 1.0;
+            baseVoidSpeed = (2.2 + (worldNum * 0.32) + (levelIdx % 20) * 0.04) * diffMult;
+            currentVoidSpeed = baseVoidSpeed;
 
             bridges = [];
             hazards = [];
             checkpoints = [];
 
-            // Continuous Base Bridge Segments
+            // Dynamic Segment & Gap Bridge Generator
             let curX = -200;
-            while (curX < levelLength + 400) {
-                let segW = 120 + Math.floor(rng() * 180);
+            let lastY = BASE_Y;
+
+            while (curX < levelLength + 500) {
+                let segW = Math.max(70, 150 - (worldNum * 6) + Math.floor(rng() * 60));
+                
+                // Height variations
+                let heightOffset = 0;
+                if (curX > 400) {
+                    const hRoll = rng();
+                    if (hRoll < 0.35) heightOffset = -35;
+                    else if (hRoll < 0.60) heightOffset = 35;
+                }
+                let segY = Math.min(BASE_Y + 35, Math.max(BASE_Y - 80, lastY + heightOffset));
+                lastY = segY;
+
+                // Crumbling bridges chance scales with chamber level
+                let isCrumbling = (curX > 500 && rng() < Math.min(0.45, 0.15 + (worldNum * 0.03)));
+
                 bridges.push({
                     x: curX,
-                    y: BASE_Y,
+                    y: segY,
                     w: segW,
-                    h: 40,
-                    materialized: curX < 400
+                    h: 30,
+                    materialized: curX < 350,
+                    crumbling: isCrumbling,
+                    steppedTimer: -1,
+                    collapsed: false
                 });
-                curX += segW;
+
+                // Precision gaps between platforms
+                let gapW = (curX < 350) ? 0 : Math.min(130, 45 + Math.floor(rng() * 55) + (worldNum * 4)); 
+                curX += segW + gapW;
             }
 
-            // Procedural Trap / Hazard Placement
-            let hX = 400;
-            const minPadding = 380 + Math.floor(rng() * 150);
+            // Procedural Hazards with Snappier Reaction Windows
+            let hX = 450;
+            const minPadding = Math.max(220, 360 - (worldNum * 12));
 
             while (hX < levelLength - 300) {
-                const roll = rng();
-                if (roll < 0.28) {
-                    // Jumpable Spike Pit / Cluster
-                    hazards.push({
-                        type: 'spike',
-                        x: hX,
-                        y: BASE_Y - 22,
-                        w: 32 + Math.floor(rng() * 2) * 20,
-                        h: 22
-                    });
-                } else if (roll < 0.55) {
-                    // Dropping Crate Hurdle (Lands on ground as 36px obstacle)
-                    hazards.push({
-                        type: 'dropCrate',
-                        x: hX,
-                        y: -100,
-                        targetY: BASE_Y - 36,
-                        w: 36,
-                        h: 36,
-                        vy: 0,
-                        triggered: false,
-                        landed: false,
-                        triggerX: hX - 220
-                    });
-                } else if (roll < 0.80) {
-                    // Ground-anchored Laser Gate (50px tall, jumpable)
-                    hazards.push({
-                        type: 'laser',
-                        x: hX,
-                        y: BASE_Y - 50,
-                        w: 20,
-                        h: 50
-                    });
-                } else {
-                    // Pop-up Spike Surprise
-                    hazards.push({
-                        type: 'popupSpike',
-                        x: hX,
-                        y: BASE_Y,
-                        targetY: BASE_Y - 22,
-                        w: 30,
-                        h: 22,
-                        triggered: false
-                    });
+                // Ensure hazard lands on or near a bridge segment
+                const validBridge = bridges.find(b => hX >= b.x && hX + 40 <= b.x + b.w);
+                if (validBridge) {
+                    const roll = rng();
+                    if (roll < 0.32) {
+                        hazards.push({
+                            type: 'spike',
+                            x: hX,
+                            y: validBridge.y - 20,
+                            w: 30 + Math.floor(rng() * 2) * 15,
+                            h: 20
+                        });
+                    } else if (roll < 0.60) {
+                        hazards.push({
+                            type: 'dropCrate',
+                            x: hX,
+                            y: -120,
+                            targetY: validBridge.y - 34,
+                            w: 34,
+                            h: 34,
+                            vy: 0,
+                            triggered: false,
+                            landed: false,
+                            triggerX: hX - (150 - worldNum * 5) // Tighter trigger margin
+                        });
+                    } else if (roll < 0.82) {
+                        hazards.push({
+                            type: 'laser',
+                            x: hX,
+                            y: validBridge.y - 55,
+                            w: 18,
+                            h: 55
+                        });
+                    } else {
+                        hazards.push({
+                            type: 'popupSpike',
+                            x: hX,
+                            y: validBridge.y,
+                            targetY: validBridge.y - 22,
+                            w: 28,
+                            h: 22,
+                            triggered: false
+                        });
+                    }
                 }
 
-                hX += minPadding + Math.floor(rng() * 220);
+                hX += minPadding + Math.floor(rng() * 180);
             }
 
-            // Checkpoints every ~1400px in long chambers
-            let cpX = 1400;
+            // Checkpoints & Safe Zone Guarantees
+            let cpX = 1300;
             while (cpX < levelLength - 500) {
-                checkpoints.push({
-                    x: cpX,
-                    y: BASE_Y - 60,
-                    w: 24,
-                    h: 60,
-                    activated: false
-                });
-                cpX += 1400;
+                const targetBridge = bridges.find(b => cpX >= b.x && cpX <= b.x + b.w);
+                if (targetBridge) {
+                    // Ensure checkpoint platform is strictly solid and non-crumbling
+                    targetBridge.crumbling = false;
+                    targetBridge.steppedTimer = -1;
+                    targetBridge.collapsed = false;
+
+                    const isAlreadyActive = activeCheckpoint && Math.abs(activeCheckpoint.x - cpX) < 10;
+                    checkpoints.push({
+                        x: cpX,
+                        y: targetBridge.y - 60,
+                        w: 24,
+                        h: 60,
+                        activated: isAlreadyActive
+                    });
+                }
+                cpX += 1300;
             }
 
-            // Exit Portal Setup (With Ragebait Fake Exits on select levels)
+            // Remove any hazards overlapping with checkpoint safe zones (180px clearance)
+            hazards = hazards.filter(h => {
+                return !checkpoints.some(cp => Math.abs(h.x - cp.x) < 180 || Math.abs((h.triggerX || h.x) - cp.x) < 180);
+            });
+
             const isFakeExitLevel = (levelIdx % 3 === 0 || levelIdx % 7 === 0);
+            const lastBridge = bridges[bridges.length - 1];
             goalPortal = {
                 x: levelLength - 80,
-                y: BASE_Y - 70,
+                y: (lastBridge ? lastBridge.y - 70 : BASE_Y - 70),
                 w: 44,
                 h: 70,
                 isFake: isFakeExitLevel,
@@ -644,9 +750,6 @@
             };
         }
 
-        /**
-         * Load / Respawn at Chamber or Checkpoint
-         */
         function loadLevel(levelIdx, isRespawn = false) {
             currentLevelIndex = levelIdx;
             localStorage.setItem('cs_level', currentLevelIndex.toString());
@@ -656,24 +759,23 @@
             if (isRespawn && activeCheckpoint) {
                 player.x = activeCheckpoint.x;
                 player.y = activeCheckpoint.y;
-                voidX = player.x - 380;
+                voidX = player.x - 420; // Expanded safety buffer so void danger isn't immediate upon respawn
             } else {
                 activeCheckpoint = null;
                 player.x = 80;
                 player.y = BASE_Y - 42;
-                voidX = -320;
+                voidX = -280;
             }
 
             player.vx = 0;
             player.vy = 0;
             player.grounded = false;
-            player.deathTimer = 0;
 
-            // UI Label updates
             const chapterIdx = Math.min(Math.floor((currentLevelIndex - 1) / 20), CHAPTER_NAMES.length - 1);
             document.getElementById('hud-level-title').innerText = `CHAMBER ${currentLevelIndex} • ${CHAPTER_NAMES[chapterIdx]}`;
             document.getElementById('hud-deaths').innerText = totalDeaths;
             document.getElementById('hud-checkpoint-badge').classList.toggle('hidden', !activeCheckpoint);
+            updateDifficultyUI();
 
             gameState = 'PLAYING';
             startTimer();
@@ -699,34 +801,54 @@
             return `${m}:${s}`;
         }
 
-        function bindTouchBtn(id, keyProp) {
-            const btn = document.getElementById(id);
+        function setupPointerControl(elementId, actionProp) {
+            const btn = document.getElementById(elementId);
             if (!btn) return;
-            btn.addEventListener('touchstart', (e) => {
+
+            const startAction = (e) => {
                 e.preventDefault();
-                keys[keyProp] = true;
                 audio.init();
-            });
-            btn.addEventListener('touchend', (e) => {
+                btn.classList.add('active');
+                keys[actionProp] = true;
+                if (actionProp === 'jump') {
+                    player.holdsJump = true;
+                }
+                if (btn.setPointerCapture && e.pointerId !== undefined) {
+                    try { btn.setPointerCapture(e.pointerId); } catch(err){}
+                }
+            };
+
+            const stopAction = (e) => {
                 e.preventDefault();
-                keys[keyProp] = false;
-            });
-            btn.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                keys[keyProp] = true;
-                audio.init();
-            });
-            btn.addEventListener('mouseup', (e) => {
-                e.preventDefault();
-                keys[keyProp] = false;
-            });
+                btn.classList.remove('active');
+                keys[actionProp] = false;
+                if (actionProp === 'jump') {
+                    player.holdsJump = false;
+                }
+            };
+
+            btn.addEventListener('pointerdown', startAction);
+            btn.addEventListener('pointerup', stopAction);
+            btn.addEventListener('pointercancel', stopAction);
+            btn.addEventListener('pointerleave', stopAction);
         }
 
-        bindTouchBtn('btn-touch-left', 'left');
-        bindTouchBtn('btn-touch-right', 'right');
-        bindTouchBtn('btn-touch-jump', 'jump');
+        setupPointerControl('btn-touch-left', 'left');
+        setupPointerControl('btn-touch-right', 'right');
+        setupPointerControl('btn-touch-jump', 'jump');
 
-        // Keyboard Controls
+        function releaseAllInputs() {
+            keys.left = false;
+            keys.right = false;
+            keys.jump = false;
+            player.holdsJump = false;
+            document.querySelectorAll('.touch-btn').forEach(btn => btn.classList.remove('active'));
+        }
+
+        window.addEventListener('pointerup', releaseAllInputs);
+        window.addEventListener('pointercancel', releaseAllInputs);
+        window.addEventListener('blur', releaseAllInputs);
+
         window.addEventListener('keydown', (e) => {
             audio.init();
             if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = true;
@@ -754,6 +876,7 @@
             isPaused = !isPaused;
             gameState = isPaused ? 'PAUSED' : 'PLAYING';
             document.getElementById('screen-pause').classList.toggle('hidden', !isPaused);
+            if (isPaused) releaseAllInputs();
         }
 
         function toggleMuteAll() {
@@ -766,18 +889,18 @@
         function killPlayer() {
             if (gameState === 'DEAD') return;
             gameState = 'DEAD';
+            releaseAllInputs();
             totalDeaths++;
             localStorage.setItem('cs_deaths', totalDeaths.toString());
             document.getElementById('hud-deaths').innerText = totalDeaths;
             audio.playDeath();
 
-            // Spawn disintegration particles
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 35; i++) {
                 particles.push({
                     x: player.x + player.w / 2,
                     y: player.y + player.h / 2,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 0.5) * 8,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
                     color: '#ff0055',
                     life: 1.0,
                     size: Math.random() * 5 + 2
@@ -786,21 +909,22 @@
 
             setTimeout(() => {
                 loadLevel(currentLevelIndex, true);
-            }, 800);
+            }, 750);
         }
 
         function quickRestartLevel() {
+            releaseAllInputs();
             loadLevel(currentLevelIndex, false);
             if (isPaused) togglePause();
         }
 
         /**
-         * Physics Update Loop (Strict 2-Pass AABB Collision Resolution for Bridges AND Crates)
+         * Physics & Traps Update Loop
          */
         function updatePhysics() {
             if (gameState !== 'PLAYING' || isPaused) return;
 
-            // 1. Horizontal Input & Movement Acceleration
+            // Movement & Friction
             if (keys.left) {
                 player.vx -= ACCEL;
                 player.facingRight = false;
@@ -812,20 +936,20 @@
             }
             player.vx = Math.max(-MOVE_SPEED, Math.min(MOVE_SPEED, player.vx));
 
-            // 2. Jump Buffering & Coyote Time Timers
+            // Coyote & Buffer
             if (player.grounded) {
-                player.coyoteTimer = 7; // ~120ms coyote grace period
+                player.coyoteTimer = 6;
             } else if (player.coyoteTimer > 0) {
                 player.coyoteTimer--;
             }
 
             if (keys.jump) {
-                player.jumpBufferTimer = 7;
+                player.jumpBufferTimer = 6;
             } else if (player.jumpBufferTimer > 0) {
                 player.jumpBufferTimer--;
             }
 
-            // Execute Jump
+            // Jump Execution
             if (player.jumpBufferTimer > 0 && player.coyoteTimer > 0) {
                 player.vy = JUMP_FORCE;
                 player.grounded = false;
@@ -834,75 +958,86 @@
                 audio.playJump();
             }
 
-            // Variable Jump Height (Short Hop vs High Jump)
             if (!player.holdsJump && player.vy < 0) {
                 player.vy += SHORT_JUMP_GRAVITY;
             }
 
-            // Gravity Acceleration
             player.vy += GRAVITY;
-            player.vy = Math.min(player.vy, 14); // Terminal velocity cap
+            player.vy = Math.min(player.vy, 15);
 
-            // Materialize Bridges Directly Ahead
+            // Materialize Bridges Ahead
             bridges.forEach(b => {
-                if (!b.materialized && player.x + 420 > b.x) {
+                if (!b.materialized && player.x + 380 > b.x) {
                     b.materialized = true;
                     audio.playBridgeAppear();
                 }
+                // Handle Crumbling Platforms
+                if (b.steppedTimer >= 0 && !b.collapsed) {
+                    b.steppedTimer += 1;
+                    if (b.steppedTimer > 24) { // Collapses after ~0.4 seconds
+                        b.collapsed = true;
+                        audio.playCrumble();
+                        for (let p = 0; p < 12; p++) {
+                            particles.push({
+                                x: b.x + Math.random() * b.w,
+                                y: b.y,
+                                vx: (Math.random() - 0.5) * 4,
+                                vy: Math.random() * 3 + 1,
+                                color: '#f97316',
+                                life: 0.8,
+                                size: Math.random() * 4 + 2
+                            });
+                        }
+                    }
+                }
             });
 
-            // PASS 1: Horizontal Movement & Collision Resolution
+            // PASS 1: Horizontal Motion
             player.x += player.vx;
 
-            // Horizontal Collision with Landed Crates (Blocks side passing)
             hazards.forEach(h => {
                 if (h.type === 'dropCrate' && h.landed) {
                     if (player.x < h.x + h.w && player.x + player.w > h.x &&
                         player.y < h.y + h.h && player.y + player.h > h.y) {
-                        if (player.vx > 0) {
-                            player.x = h.x - player.w;
-                        } else if (player.vx < 0) {
-                            player.x = h.x + h.w;
-                        }
+                        if (player.vx > 0) player.x = h.x - player.w;
+                        else if (player.vx < 0) player.x = h.x + h.w;
                         player.vx = 0;
                     }
                 }
             });
 
-            // PASS 2: Vertical Movement & Collision Resolution
+            // PASS 2: Vertical Motion & Platform Landing
             player.y += player.vy;
             player.grounded = false;
+            player.standingBridge = null;
 
-            // Collide with Materialized Bridges
             bridges.forEach(b => {
-                if (!b.materialized) return;
+                if (!b.materialized || b.collapsed) return;
                 if (player.x + player.w > b.x && player.x < b.x + b.w) {
-                    // Landing on top
-                    if (player.y + player.h >= b.y && player.y + player.h - player.vy <= b.y + 12 && player.vy >= 0) {
+                    if (player.y + player.h >= b.y && player.y + player.h - player.vy <= b.y + 14 && player.vy >= 0) {
                         player.y = b.y - player.h;
                         player.vy = 0;
                         player.grounded = true;
-                    }
-                    // Head bump underneath
-                    else if (player.y <= b.y + b.h && player.y - player.vy >= b.y + b.h - 12 && player.vy < 0) {
+                        player.standingBridge = b;
+                        if (b.crumbling && b.steppedTimer < 0) {
+                            b.steppedTimer = 0;
+                        }
+                    } else if (player.y <= b.y + b.h && player.y - player.vy >= b.y + b.h - 12 && player.vy < 0) {
                         player.y = b.y + b.h;
                         player.vy = 0;
                     }
                 }
             });
 
-            // Collide with Landed Drop Crates (Stand on top / Head bump)
+            // Drop Crate Platform Surface
             hazards.forEach(h => {
                 if (h.type === 'dropCrate' && h.landed) {
                     if (player.x + player.w > h.x && player.x < h.x + h.w) {
-                        // Landing on top of crate hurdle
-                        if (player.y + player.h >= h.y && player.y + player.h - player.vy <= h.y + 12 && player.vy >= 0) {
+                        if (player.y + player.h >= h.y && player.y + player.h - player.vy <= h.y + 14 && player.vy >= 0) {
                             player.y = h.y - player.h;
                             player.vy = 0;
                             player.grounded = true;
-                        }
-                        // Head bump underneath crate
-                        else if (player.y <= h.y + h.h && player.y - player.vy >= h.y + h.h - 12 && player.vy < 0) {
+                        } else if (player.y <= h.y + h.h && player.y - player.vy >= h.y + h.h - 12 && player.vy < 0) {
                             player.y = h.y + h.h;
                             player.vy = 0;
                         }
@@ -910,21 +1045,28 @@
                 }
             });
 
-            // Update Chasing Void Rift
-            voidX += voidSpeed;
+            // Dynamic Void Speed (Surges if player stays far ahead)
+            const distAhead = player.x - voidX;
+            if (distAhead > 480) {
+                currentVoidSpeed = baseVoidSpeed * 1.3;
+            } else {
+                currentVoidSpeed = baseVoidSpeed;
+            }
+            voidX += currentVoidSpeed;
+
             if (player.x < voidX) {
                 killPlayer();
                 return;
             }
 
-            // Update Hazards Mechanics & Lethal Check
+            // Hazard Updates
             hazards.forEach(h => {
                 if (h.type === 'dropCrate') {
                     if (!h.triggered && player.x > h.triggerX) {
                         h.triggered = true;
                     }
                     if (h.triggered && !h.landed) {
-                        h.vy += 0.8;
+                        h.vy += 1.2; // Faster drop acceleration
                         h.y += h.vy;
                         if (h.y >= h.targetY) {
                             h.y = h.targetY;
@@ -933,7 +1075,6 @@
                         }
                     }
 
-                    // Crushed by falling crate while dropping
                     if (!h.landed && h.triggered) {
                         if (player.x + player.w - 4 > h.x && player.x + 4 < h.x + h.w &&
                             player.y + player.h - 4 > h.y && player.y + 4 < h.y + h.h) {
@@ -942,16 +1083,15 @@
                         }
                     }
                 } else if (h.type === 'popupSpike') {
-                    if (!h.triggered && Math.abs(player.x - h.x) < 140) {
+                    if (!h.triggered && Math.abs(player.x - h.x) < 120) {
                         h.triggered = true;
                         audio.playTrapTroll();
                     }
                     if (h.triggered && h.y > h.targetY) {
-                        h.y -= 4;
+                        h.y -= 5;
                     }
                 }
 
-                // Lethal Spikes & Laser Gate Collision Checks
                 if (h.type === 'spike' || (h.type === 'popupSpike' && h.triggered) || h.type === 'laser') {
                     if (player.x + player.w - 4 > h.x && player.x + 4 < h.x + h.w &&
                         player.y + player.h - 4 > h.y && player.y + 4 < h.y + h.h) {
@@ -961,53 +1101,50 @@
                 }
             });
 
-            // Checkpoints Check
+            // Checkpoint Triggers
             checkpoints.forEach(cp => {
                 if (!cp.activated && player.x + player.w > cp.x && player.x < cp.x + cp.w) {
                     cp.activated = true;
-                    activeCheckpoint = { x: cp.x, y: cp.y, voidDist: player.x - voidX };
+                    activeCheckpoint = { x: cp.x, y: cp.y };
                     audio.playCheckpoint();
                     document.getElementById('hud-checkpoint-badge').classList.remove('hidden');
                 }
             });
 
-            // Fake Exit Portal Logic (Ragebait Jump)
+            // Fake Portal Trap
             if (goalPortal.isFake && !goalPortal.teleported) {
                 if (Math.abs(player.x - goalPortal.x) < 110) {
-                    goalPortal.x += 420;
+                    goalPortal.x += 380;
                     goalPortal.teleported = true;
                     audio.playTrapTroll();
                 }
             }
 
-            // Chamber Exit Clear Check
             if (player.x + player.w > goalPortal.x && player.x < goalPortal.x + goalPortal.w &&
                 player.y + player.h > goalPortal.y) {
                 handleWin();
             }
 
-            // Fall Pit Death Check
-            if (player.y > V_HEIGHT + 100) {
+            if (player.y > V_HEIGHT + 120) {
                 killPlayer();
             }
 
-            // Smooth Camera Follow
             cameraX = player.x - V_WIDTH * 0.35;
             cameraX = Math.max(0, cameraX);
 
-            // Dynamic Heartbeat & Danger Vignette
             const voidDist = player.x - voidX;
-            const danger = Math.max(0, 1 - (voidDist / 450));
+            const danger = Math.max(0, 1 - (voidDist / 420));
             document.getElementById('danger-vignette').style.opacity = danger.toFixed(2);
             document.getElementById('hud-distance').innerText = `${Math.floor(player.x / 10)}m`;
 
-            if (danger > 0.6 && Math.random() < 0.05) {
+            if (danger > 0.65 && Math.random() < 0.06) {
                 audio.playHeartbeat();
             }
         }
 
         function handleWin() {
             gameState = 'WIN';
+            releaseAllInputs();
             stopTimer();
             audio.playWin();
 
@@ -1023,25 +1160,36 @@
         }
 
         /**
-         * Canvas Render Loop
+         * Canvas Renderer
          */
         function render() {
             ctx.save();
             ctx.scale(scaleRatio, scaleRatio);
 
-            // Background Void Cyber Grid
             ctx.fillStyle = '#03030a';
             ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
 
             ctx.save();
             ctx.translate(-cameraX, 0);
 
-            // Materialized & Unmaterialized Quantum Bridges
+            // Render Platform Bridges
             bridges.forEach(b => {
+                if (b.collapsed) return;
+
                 if (!b.materialized) {
                     ctx.strokeStyle = 'rgba(255, 0, 85, 0.2)';
                     ctx.lineWidth = 1;
                     ctx.strokeRect(b.x, b.y, b.w, b.h);
+                } else if (b.crumbling) {
+                    ctx.fillStyle = b.steppedTimer >= 0 ? '#9a3412' : '#7c2d12';
+                    ctx.fillRect(b.x, b.y, b.w, b.h);
+
+                    ctx.strokeStyle = '#f97316';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(b.x, b.y, b.w, b.h);
+
+                    ctx.fillStyle = '#fdba74';
+                    ctx.fillRect(b.x, b.y, b.w, 3);
                 } else {
                     ctx.fillStyle = '#0f172a';
                     ctx.fillRect(b.x, b.y, b.w, b.h);
@@ -1050,7 +1198,6 @@
                     ctx.lineWidth = 2;
                     ctx.strokeRect(b.x, b.y, b.w, b.h);
 
-                    // Top Neon Edge Beam
                     ctx.fillStyle = '#00f3ff';
                     ctx.fillRect(b.x, b.y, b.w, 3);
                 }
@@ -1076,9 +1223,8 @@
                     ctx.lineWidth = 2;
                     ctx.strokeRect(h.x, h.y, h.w, h.h);
 
-                    // Warning Beam before landing
                     if (h.triggered && !h.landed) {
-                        ctx.strokeStyle = 'rgba(244, 63, 94, 0.3)';
+                        ctx.strokeStyle = 'rgba(244, 63, 94, 0.4)';
                         ctx.setLineDash([4, 4]);
                         ctx.beginPath();
                         ctx.moveTo(h.x + h.w / 2, h.y);
@@ -1087,12 +1233,10 @@
                         ctx.setLineDash([]);
                     }
                 } else if (h.type === 'laser') {
-                    // Posts
                     ctx.fillStyle = '#475569';
                     ctx.fillRect(h.x - 2, h.y, 4, h.h);
                     ctx.fillRect(h.x + h.w - 2, h.y, 4, h.h);
 
-                    // Beam
                     ctx.fillStyle = 'rgba(255, 0, 85, 0.85)';
                     ctx.fillRect(h.x, h.y + 4, h.w, h.h - 8);
                 }
@@ -1119,7 +1263,7 @@
             ctx.lineWidth = 3;
             ctx.strokeRect(goalPortal.x, goalPortal.y, goalPortal.w, goalPortal.h);
 
-            // Chasing Entropy Void
+            // Chasing Void
             ctx.fillStyle = 'rgba(255, 0, 85, 0.45)';
             ctx.fillRect(voidX - 400, 0, 400, V_HEIGHT);
             ctx.fillStyle = '#ff0055';
@@ -1130,7 +1274,6 @@
                 ctx.fillStyle = '#00f3ff';
                 ctx.fillRect(player.x, player.y, player.w, player.h);
 
-                // Visor Edge
                 ctx.fillStyle = '#ffffff';
                 const visorX = player.facingRight ? player.x + player.w - 8 : player.x + 2;
                 ctx.fillRect(visorX, player.y + 8, 6, 6);
@@ -1140,7 +1283,7 @@
             particles.forEach((p, idx) => {
                 p.x += p.vx;
                 p.y += p.vy;
-                p.life -= 0.02;
+                p.life -= 0.025;
                 if (p.life <= 0) {
                     particles.splice(idx, 1);
                 } else {
@@ -1155,19 +1298,13 @@
             ctx.restore();
         }
 
-        /**
-         * Main Game Loop
-         */
-        function gameLoop(timestamp) {
+        function gameLoop() {
             updatePhysics();
             render();
             requestAnimationFrame(gameLoop);
         }
         requestAnimationFrame(gameLoop);
 
-        /**
-         * Level Selector UI Generator (200 Chambers across 10 Chapters)
-         */
         function renderLevelSelector(worldNum = 1) {
             const tabsContainer = document.getElementById('world-tabs');
             const gridContainer = document.getElementById('level-grid');
@@ -1175,7 +1312,6 @@
             tabsContainer.innerHTML = '';
             gridContainer.innerHTML = '';
 
-            // Render World / Chapter Tabs
             for (let w = 1; w <= 10; w++) {
                 const tab = document.createElement('button');
                 tab.className = `px-2.5 py-1 rounded-lg text-xs font-bold font-orbitron transition ${w === worldNum ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`;
@@ -1184,7 +1320,6 @@
                 tabsContainer.appendChild(tab);
             }
 
-            // Render 20 Level Buttons for the Selected World
             const startIdx = (worldNum - 1) * 20 + 1;
             const endIdx = startIdx + 19;
 
@@ -1208,7 +1343,6 @@
                         document.getElementById('screen-levels').classList.add('hidden');
                         document.getElementById('screen-main').classList.add('hidden');
                         document.getElementById('hud').style.opacity = '1';
-                        document.getElementById('touch-controls').classList.remove('hidden');
                         loadLevel(i, false);
                     };
                 }
@@ -1216,11 +1350,10 @@
             }
         }
 
-        // Screen Button Handlers
+        // Screen Handlers
         document.getElementById('btn-play').onclick = () => {
             document.getElementById('screen-main').classList.add('hidden');
             document.getElementById('hud').style.opacity = '1';
-            document.getElementById('touch-controls').classList.remove('hidden');
             loadLevel(currentLevelIndex, false);
         };
 
@@ -1237,7 +1370,6 @@
             document.getElementById('screen-levels').classList.add('hidden');
             document.getElementById('screen-main').classList.add('hidden');
             document.getElementById('hud').style.opacity = '1';
-            document.getElementById('touch-controls').classList.remove('hidden');
             loadLevel(maxUnlockedLevel, false);
         };
 
