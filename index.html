@@ -15,8 +15,31 @@
         * {
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
             touch-action: none;
             box-sizing: border-box;
+        }
+        /* The chamber list is the one place a finger needs to scroll */
+        #level-grid, #level-grid * {
+            touch-action: pan-y;
+        }
+        /* Keep the HUD and thumb controls clear of notches, rounded corners and the home indicator */
+        #hud {
+            padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) 0.5rem max(0.5rem, env(safe-area-inset-left));
+        }
+        #touch-controls {
+            bottom: max(1rem, env(safe-area-inset-bottom));
+            padding-left: max(1rem, env(safe-area-inset-left));
+            padding-right: max(1rem, env(safe-area-inset-right));
+        }
+        @media (min-width: 640px) {
+            #hud {
+                padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
+            }
+            #touch-controls {
+                padding-left: max(2.5rem, env(safe-area-inset-left));
+                padding-right: max(2.5rem, env(safe-area-inset-right));
+            }
         }
         html, body {
             margin: 0;
@@ -54,14 +77,14 @@
             background: rgba(255, 0, 85, 0.4);
             border-radius: 4px;
         }
-        /* Lively & Ultra-Responsive Touch Buttons */
+        /* Lively & Ultra-Responsive Touch Buttons (pressed state is driven per finger from JS) */
         .touch-btn {
             touch-action: none;
             -webkit-tap-highlight-color: transparent;
             transition: transform 0.05s ease-out, box-shadow 0.05s ease-out, background-color 0.05s ease-out;
             box-shadow: 0 4px 15px rgba(0, 243, 255, 0.25);
         }
-        .touch-btn:active, .touch-btn.active {
+        .touch-btn.active {
             background-color: rgba(0, 243, 255, 0.5) !important;
             border-color: #00f3ff !important;
             transform: scale(0.88) translateY(2px) !important;
@@ -70,7 +93,7 @@
         .jump-btn {
             box-shadow: 0 4px 20px rgba(255, 0, 85, 0.35);
         }
-        .jump-btn:active, .jump-btn.active {
+        .jump-btn.active {
             background-color: rgba(255, 0, 85, 0.7) !important;
             border-color: #ff0055 !important;
             transform: scale(0.88) translateY(2px) !important;
@@ -101,7 +124,7 @@
         <div id="danger-vignette" class="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-0 bg-radial from-transparent via-transparent to-red-950/80"></div>
 
         <!-- Clean Top HUD Banner -->
-        <div id="hud" class="absolute top-0 left-0 w-full p-2 sm:p-4 flex justify-between items-start pointer-events-none z-10 opacity-0 transition-opacity duration-300">
+        <div id="hud" class="absolute top-0 left-0 w-full flex justify-between items-start pointer-events-none z-10 opacity-0 transition-opacity duration-300">
             <!-- Left Info Banner -->
             <div class="flex flex-col gap-0.5">
                 <div class="flex items-center gap-2">
@@ -138,7 +161,7 @@
         </div>
 
         <!-- Virtual Touch Controls (Thumb Spacing matching Sketch 2 layout) -->
-        <div id="touch-controls" class="absolute bottom-4 left-0 w-full px-4 sm:px-10 flex justify-between items-end pointer-events-none z-20">
+        <div id="touch-controls" class="absolute left-0 w-full flex justify-between items-end pointer-events-none z-20">
             <!-- Left Thumb Controls -->
             <div class="flex gap-4 sm:gap-6 pointer-events-auto">
                 <button id="btn-touch-left" class="touch-btn w-14 h-14 sm:w-18 sm:h-18 rounded-2xl glass-panel bg-slate-900/90 flex items-center justify-center text-cyan-300 text-2xl sm:text-3xl border-2 border-cyan-400/80 shadow-2xl">
@@ -483,13 +506,29 @@
         let isPaused = false;
         let difficultyMode = localStorage.getItem('cs_diff') || 'STD';
 
+        // World band that must stay on screen: from the apex of a full jump off the highest
+        // bridge (BASE_Y - 80) down to the underside of the lowest one (BASE_Y + 35, 30 tall).
+        const PLAY_TOP = 20;
+        const PLAY_BOTTOM = BASE_Y + 65;
+        const GROUND_CLEARANCE_PX = 12; // gap kept between the lowest bridge and the thumb buttons
+        let viewOffsetY = 0;
+        let viewWidth = V_WIDTH;
+
         function resizeCanvas() {
             const container = document.getElementById('game-container');
             if (!container) return;
             const rect = container.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
-            scaleRatio = rect.width / V_WIDTH;
+
+            // Lift the ground clear of the thumb buttons: fit the play band into the space above
+            // them, zooming out only when a short (phone landscape) screen can't hold it full width.
+            const controls = document.getElementById('touch-controls');
+            const reserved = controls ? rect.bottom - controls.getBoundingClientRect().top + GROUND_CLEARANCE_PX : 0;
+            const usableHeight = Math.max(rect.height * 0.5, rect.height - reserved);
+            scaleRatio = Math.min(rect.width / V_WIDTH, usableHeight / (PLAY_BOTTOM - PLAY_TOP));
+            viewOffsetY = Math.min(0, usableHeight - PLAY_BOTTOM * scaleRatio);
+            viewWidth = rect.width / scaleRatio;
 
             const rotatePrompt = document.getElementById('rotate-device-prompt');
             if (rotatePrompt) {
@@ -504,6 +543,8 @@
         }
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('orientationchange', resizeCanvas);
+        // Also catches mobile URL-bar show/hide and late-applied styles
+        if (window.ResizeObserver) new ResizeObserver(resizeCanvas).observe(document.getElementById('game-container'));
         resizeCanvas();
 
         const CHAPTER_NAMES = [
@@ -755,6 +796,11 @@
             player.vx = 0;
             player.vy = 0;
             player.grounded = false;
+            player.coyoteTimer = 0;
+            player.jumpBufferTimer = 0;
+
+            isPaused = false;
+            document.getElementById('screen-pause').classList.add('hidden');
 
             const chapterIdx = Math.min(Math.floor((currentLevelIndex - 1) / 20), CHAPTER_NAMES.length - 1);
             document.getElementById('hud-level-title').innerText = `CHAMBER ${currentLevelIndex} • ${CHAPTER_NAMES[chapterIdx]}`;
@@ -786,75 +832,130 @@
             return `${m}:${s}`;
         }
 
-        function setupPointerControl(elementId, actionProp) {
-            const btn = document.getElementById(elementId);
-            if (!btn) return;
+        // Touch input is tracked per finger, so lifting one thumb never releases another, a thumb
+        // can slide between buttons, and a button held through a death keeps working after respawn.
+        const keyboardHeld = { left: false, right: false, jump: false };
+        const touchPointers = new Map(); // pointerId -> 'left' | 'right' | 'jump' | null
+        const gameContainer = document.getElementById('game-container');
+        const touchControls = document.getElementById('touch-controls');
+        const touchButtons = [
+            { el: document.getElementById('btn-touch-left'), action: 'left' },
+            { el: document.getElementById('btn-touch-right'), action: 'right' },
+            { el: document.getElementById('btn-touch-jump'), action: 'jump' }
+        ];
+        const TOUCH_SLOP = 24;      // px of forgiveness around each button for a press
+        const TOUCH_HOLD_SLOP = 56; // px a held thumb may drift off its button before letting go
 
-            const startAction = (e) => {
-                if (e.cancelable) e.preventDefault();
-                audio.init();
-                btn.classList.add('active');
-                keys[actionProp] = true;
-                if (actionProp === 'jump') {
-                    player.holdsJump = true;
-                    player.jumpBufferTimer = 8;
-                }
-            };
-
-            const stopAction = (e) => {
-                if (e && e.cancelable) e.preventDefault();
-                btn.classList.remove('active');
-                keys[actionProp] = false;
-                if (actionProp === 'jump') {
-                    player.holdsJump = false;
-                }
-            };
-
-            btn.addEventListener('touchstart', startAction, { passive: false });
-            btn.addEventListener('touchend', stopAction, { passive: false });
-            btn.addEventListener('touchcancel', stopAction, { passive: false });
-            btn.addEventListener('pointerdown', startAction);
-            btn.addEventListener('pointerup', stopAction);
-            btn.addEventListener('pointercancel', stopAction);
-            btn.addEventListener('pointerleave', stopAction);
+        function measureTouchButtons() {
+            touchButtons.forEach(b => {
+                const r = b.el.getBoundingClientRect();
+                // offsetWidth/offsetHeight ignore the pressed-state scale transform
+                b.cx = (r.left + r.right) / 2;
+                b.cy = (r.top + r.bottom) / 2;
+                b.halfW = b.el.offsetWidth / 2;
+                b.halfH = b.el.offsetHeight / 2;
+            });
         }
 
-        setupPointerControl('btn-touch-left', 'left');
-        setupPointerControl('btn-touch-right', 'right');
-        setupPointerControl('btn-touch-jump', 'jump');
+        function touchActionAt(x, y, heldAction) {
+            let nearest = null;
+            let nearestDist = Infinity;
+            let heldDist = Infinity;
+            touchButtons.forEach(b => {
+                const dx = Math.max(0, Math.abs(x - b.cx) - b.halfW);
+                const dy = Math.max(0, Math.abs(y - b.cy) - b.halfH);
+                const dist = Math.hypot(dx, dy);
+                if (dist < nearestDist) {
+                    nearest = b.action;
+                    nearestDist = dist;
+                }
+                if (b.action === heldAction) heldDist = dist;
+            });
+            if (nearestDist <= TOUCH_SLOP) return nearest;
+            if (heldDist <= TOUCH_HOLD_SLOP) return heldAction;
+            return null;
+        }
+
+        function syncInput() {
+            const touchHeld = { left: false, right: false, jump: false };
+            touchPointers.forEach(action => {
+                if (action) touchHeld[action] = true;
+            });
+            touchButtons.forEach(b => b.el.classList.toggle('active', touchHeld[b.action]));
+
+            keys.left = keyboardHeld.left || touchHeld.left;
+            keys.right = keyboardHeld.right || touchHeld.right;
+            keys.jump = keyboardHeld.jump || touchHeld.jump;
+            player.holdsJump = keys.jump;
+        }
+
+        function setTouchAction(pointerId, action) {
+            if (touchPointers.get(pointerId) === action) return;
+            touchPointers.set(pointerId, action);
+            // Buffer the jump so a tap shorter than one frame still registers
+            if (action === 'jump') player.jumpBufferTimer = 8;
+            syncInput();
+        }
+
+        gameContainer.addEventListener('pointerdown', (e) => {
+            // Only presses on the play field steer the runner; HUD buttons and overlays keep their clicks
+            if (e.target !== canvas && !touchControls.contains(e.target)) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            e.preventDefault();
+            audio.init();
+            gameContainer.setPointerCapture(e.pointerId);
+            measureTouchButtons();
+            setTouchAction(e.pointerId, touchActionAt(e.clientX, e.clientY, null));
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!touchPointers.has(e.pointerId)) return;
+            setTouchAction(e.pointerId, touchActionAt(e.clientX, e.clientY, touchPointers.get(e.pointerId)));
+        });
+
+        const endTouch = (e) => {
+            if (touchPointers.delete(e.pointerId)) syncInput();
+        };
+        window.addEventListener('pointerup', endTouch);
+        window.addEventListener('pointercancel', endTouch);
+
+        // Stop long-press callouts, the magnifier and double-tap zoom from interrupting a held button
+        [canvas, touchControls].forEach(el => {
+            el.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+            el.addEventListener('contextmenu', (e) => e.preventDefault());
+        });
 
         function releaseAllInputs() {
-            keys.left = false;
-            keys.right = false;
-            keys.jump = false;
-            player.holdsJump = false;
-            document.querySelectorAll('.touch-btn').forEach(btn => btn.classList.remove('active'));
+            keyboardHeld.left = false;
+            keyboardHeld.right = false;
+            keyboardHeld.jump = false;
+            touchPointers.clear();
+            syncInput();
         }
 
-        window.addEventListener('pointerup', releaseAllInputs);
-        window.addEventListener('pointercancel', releaseAllInputs);
+        // A touch pointerup counts as user activation, which mobile browsers require to start audio
+        window.addEventListener('pointerup', () => audio.init());
         window.addEventListener('blur', releaseAllInputs);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) releaseAllInputs();
+        });
 
         window.addEventListener('keydown', (e) => {
             audio.init();
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = true;
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = true;
-            if (e.code === 'KeyW' || e.code === 'Space' || e.code === 'ArrowUp') {
-                keys.jump = true;
-                player.holdsJump = true;
-            }
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') keyboardHeld.left = true;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') keyboardHeld.right = true;
+            if (e.code === 'KeyW' || e.code === 'Space' || e.code === 'ArrowUp') keyboardHeld.jump = true;
             if (e.code === 'KeyR') quickRestartLevel();
             if (e.code === 'KeyP' || e.code === 'Escape') togglePause();
             if (e.code === 'KeyM') toggleMuteAll();
+            syncInput();
         });
 
         window.addEventListener('keyup', (e) => {
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
-            if (e.code === 'KeyW' || e.code === 'Space' || e.code === 'ArrowUp') {
-                keys.jump = false;
-                player.holdsJump = false;
-            }
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') keyboardHeld.left = false;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') keyboardHeld.right = false;
+            if (e.code === 'KeyW' || e.code === 'Space' || e.code === 'ArrowUp') keyboardHeld.jump = false;
+            syncInput();
         });
 
         function togglePause() {
@@ -875,7 +976,7 @@
         function killPlayer() {
             if (gameState === 'DEAD') return;
             gameState = 'DEAD';
-            releaseAllInputs();
+            // Held buttons stay held, so the run carries on the moment the player respawns
             totalDeaths++;
             localStorage.setItem('cs_deaths', totalDeaths.toString());
             document.getElementById('hud-deaths').innerText = totalDeaths;
@@ -895,13 +996,14 @@
 
             setTimeout(() => {
                 loadLevel(currentLevelIndex, true);
+                // Chambers menu opened mid-death: respawn paused instead of running behind it
+                if (!document.getElementById('screen-levels').classList.contains('hidden')) togglePause();
             }, 750);
         }
 
         function quickRestartLevel() {
             releaseAllInputs();
             loadLevel(currentLevelIndex, false);
-            if (isPaused) togglePause();
         }
 
         function updatePhysics() {
@@ -1111,7 +1213,7 @@
                 killPlayer();
             }
 
-            cameraX = player.x - V_WIDTH * 0.35;
+            cameraX = player.x - viewWidth * 0.35;
             cameraX = Math.max(0, cameraX);
 
             const voidDist = player.x - voidX;
@@ -1142,11 +1244,12 @@
         }
 
         function render() {
-            ctx.save();
-            ctx.scale(scaleRatio, scaleRatio);
-
             ctx.fillStyle = '#03030a';
-            ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(0, viewOffsetY);
+            ctx.scale(scaleRatio, scaleRatio);
 
             ctx.save();
             ctx.translate(-cameraX, 0);
@@ -1242,11 +1345,14 @@
             ctx.lineWidth = 3;
             ctx.strokeRect(goalPortal.x, goalPortal.y, goalPortal.w, goalPortal.h);
 
-            // Chasing Void
+            // Chasing Void (covers the whole visible column, however wide or tall the view is)
+            const viewTop = -viewOffsetY / scaleRatio;
+            const viewHeight = canvas.height / scaleRatio;
+            const voidLeft = Math.min(voidX - 400, cameraX);
             ctx.fillStyle = 'rgba(255, 0, 85, 0.45)';
-            ctx.fillRect(voidX - 400, 0, 400, V_HEIGHT);
+            ctx.fillRect(voidLeft, viewTop, voidX - voidLeft, viewHeight);
             ctx.fillStyle = '#ff0055';
-            ctx.fillRect(voidX - 4, 0, 4, V_HEIGHT);
+            ctx.fillRect(voidX - 4, viewTop, 4, viewHeight);
 
             // Player Avatar
             if (gameState !== 'DEAD') {
@@ -1364,13 +1470,14 @@
         document.getElementById('btn-quick-restart').onclick = quickRestartLevel;
         document.getElementById('btn-pause-restart').onclick = quickRestartLevel;
 
+        // Choosing a chamber freezes the run; closing the list lands back on the pause screen
         document.getElementById('btn-open-menu').onclick = () => {
+            if (gameState === 'PLAYING') togglePause();
             renderLevelSelector(Math.floor((currentLevelIndex - 1) / 20) + 1);
             document.getElementById('screen-levels').classList.remove('hidden');
         };
 
         document.getElementById('btn-pause-menu').onclick = () => {
-            togglePause();
             renderLevelSelector(Math.floor((currentLevelIndex - 1) / 20) + 1);
             document.getElementById('screen-levels').classList.remove('hidden');
         };
